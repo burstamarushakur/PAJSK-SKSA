@@ -1,0 +1,68 @@
+{
+  "kelabPersatuan": {
+    "ditaksir": true,
+    "aktiviti": "KELAB PENCEGAHAN JENAYAH (SR)",
+    "jawatan": "BENDAHARI",
+    "pelibatan": [
+      {"peringkat":"ANTARABANGSA","slot":1}
+    ],
+    "pencapaian": {"peringkat":"NEGERI","kedudukan":"NAIB JOHAN"},
+    "komitmen": [
+      "MENUNJUKKAN KEPIMPINAN",
+      "MENGURUS AKTIVITI",
+      "MENYEDIA PERALATAN",
+      "MEMBANTU GURU ATAU RAKAN"
+    ],
+    "khidmatSumbangan": "MURID YANG DIDAFTARKAN SEBAGAI ATLET ATAU PESERTA PROGRAM/ PERTANDINGAN/ KARNIVAL/ KURSUS",
+    "kehadiran": 12
+  },
+  "badanBeruniform": {
+    "ditaksir": true,
+    "aktiviti": "KADET REMAJA SEKOLAH (SR)",
+    "jawatan": "NAIB SETIAUSAHA",
+    "pelibatan": [
+      {"peringkat":"KEBANGSAAN","slot":2}
+    ],
+    "pencapaian": {"peringkat":"ZON/DAERAH","kedudukan":"KELIMA"},
+    "komitmen": [
+      "MENUNJUKKAN KEPIMPINAN",
+      "MENGURUS AKTIVITI",
+      "MENYEDIA PERALATAN",
+      "MEMBANTU GURU ATAU RAKAN"
+    ],
+    "khidmatSumbangan": "MURID YANG DIDAFTARKAN SEBAGAI ATLET ATAU PESERTA PROGRAM/ PERTANDINGAN/ KARNIVAL/ KURSUS",
+    "kehadiran": 12
+  },
+  "sukanPermainan": {
+    "ditaksir": true,
+    "aktiviti": "GASING (SR)",
+    "jawatan": "BENDAHARI",
+    "pelibatan": [
+      {"peringkat":"KEBANGSAAN","slot":1}
+    ],
+    "pencapaian": {"peringkat":"SEKOLAH","kedudukan":"JOHAN"},
+    "komitmen": [
+      "MENUNJUKKAN KEPIMPINAN",
+      "MENGURUS AKTIVITI",
+      "MENYEDIA PERALATAN",
+      "MEMBANTU GURU ATAU RAKAN"
+    ],
+    "khidmatSumbangan": "MURID YANG DIDAFTARKAN SEBAGAI ATLET ATAU PESERTA PROGRAM/ PERTANDINGAN/ KARNIVAL/ KURSUS",
+    "kehadiran": 12
+  },
+  "ekstraKurikulum": {
+    "ditaksir": true,
+    "perkhidmatan": {
+      "code": "SERVICE_7",
+      "label": "PENGAWAS/PENGAWAS PUSAT SUMBER/KETUA ASRAMA/KETUA PRS/KETUA BADAR/KUARTERMASTER/PENGERUSI BADAN PERKHIDMATAN SEKOLAH|7",
+      "score": 7
+    },
+    "anugerahKhas": null,
+    "khidmatMasyarakat": [
+      {"activity":"AKTIVITI ALAM SEKITAR|10","count":2},
+      {"activity":"AKTIVITI KEROHANIAN|10","count":2},
+      {"activity":"AKTIVITI KEBUDAYAAN/KESENIAN/INTEGRASI|10","count":1}
+    ],
+    "nilamStars": 2
+  }
+}
