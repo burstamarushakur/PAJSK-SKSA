@@ -1,5 +1,5 @@
 {
   "name": "PAJSK SKSA",
-  "description": "Sistem PAJSK SKSA menggunakan Supabase project Perjumpaan Kokurikulum SKSA dengan storage pajsk_* terasing.",
-  "version": "1.0.0"
+  "description": "Sistem PAJSK SKSA Tahap 2 (Tahun 4-6) dengan aliran PPKI berasingan, menggunakan Supabase project Perjumpaan Kokurikulum SKSA.",
+  "version": "1.1.0"
 }

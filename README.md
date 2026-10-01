@@ -2,39 +2,46 @@
 
 PAJSK menggunakan **project Supabase yang sama** dengan Portal Koku dan BMI/SEGAK: `Perjumpaan Kokurikulum SKSA` (`sxmchnwzcbsanecxnqdt`).
 
+## Skop murid
+
+- **Arus perdana PAJSK: Tahun 4, 5 dan 6 sahaja.** Tahun 1-3 tidak dipaparkan dalam webapp.
+- **PPKI menggunakan aliran berasingan.** Webapp menyenaraikan semua murid PPKI aktif dan membenarkan pemilihan murid seperti aliran Sijil Berhenti/Tamat Sekolah. Borang PPKI tidak dicampur dengan struktur Tahun 4-6 kerana struktur SPPB/iDME PPKI berbeza.
+
+## Integrasi Portal Koku
+
+Portal Koku kekal master untuk `students`, `classes`, `student_enrolments`, `academic_sessions`, `student_unit_memberships`, `unit_committee_members` dan `units`.
+
+Webapp PAJSK pra-isi perkara yang memang wujud dalam Portal Koku:
+- unit Kelab & Persatuan,
+- unit Badan Beruniform,
+- unit Sukan & Permainan,
+- jawatan jawatankuasa murid yang boleh dipadankan.
+
+Nilai yang dihantar ke SPPB/iDME disimpan menggunakan **label tepat iDME**. Contohnya `AGAMA ISLAM` dalam Portal Koku dipadankan kepada `PERSATUAN AGAMA ISLAM (SR)`. Jawatan seperti `NAIB PENGERUSI 1/2/3` dipadankan kepada `NAIB PENGERUSI`, dan `AJK 1..n` kepada `AHLI JAWATANKUASA`.
+
+Jika Portal Koku mempunyai unit/jawatan yang belum dapat dipastikan padanannya (contohnya unit yang tidak kelihatan dalam screenshot iDME), webapp tidak meneka. Ia ditanda **perlu semak** dan guru memilih label iDME sebenar daripada dropdown.
+
 ## Pengasingan data
 
-Portal Koku kekal sebagai master melalui `students`, `classes`, `student_enrolments`, `academic_sessions`, `student_unit_memberships` dan `units`. PAJSK **hanya membaca** objek master itu melalui Edge Function server-side.
+PAJSK menulis hanya ke objek `pajsk_*`. `public.pajsk_records` lama milik Portal Koku tidak diubah.
 
-PAJSK menulis hanya ke objek baru:
+Objek utama:
 - `pajsk_student_records`
 - `pajsk_settings`
 - `pajsk_audit_log`
 - `pajsk_reference_options`
-
-`public.pajsk_records` lama milik Portal Koku **tidak diubah**. Tiada foreign key baru ke table Portal Koku.
+- `pajsk_unit_idme_map`
+- `pajsk_ppki_selections`
 
 ## Backend live
 
-Edge Function berikut telah dideploy dalam project yang sama:
-- `pajsk-api` — API webapp
-- `pajsk-extension-api` — lookup read-only untuk Chrome Extension
+Edge Function production:
+- `pajsk-api` — webapp
+- `pajsk-extension-api` — Chrome Extension
 
-Frontend default terus menunjuk ke `https://sxmchnwzcbsanecxnqdt.supabase.co/functions/v1/pajsk-api`.
+Frontend default menunjuk ke `https://sxmchnwzcbsanecxnqdt.supabase.co/functions/v1/pajsk-api`.
 
-Password webapp menggunakan password sistem BMI/SEGAK yang sama, tetapi hanya hash disimpan dalam `pajsk_settings`. Plaintext password tidak berada dalam repo.
-
-## Struktur data PAJSK
-
-Empat modul per murid/sesi:
-1. Kelab & Persatuan
-2. Badan Beruniform
-3. Sukan & Permainan
-4. Ekstra Kurikulum
-
-Tiga modul utama menyimpan Ditaksir, Aktiviti Kokurikulum, Jawatan, Pelibatan maksimum 3, Tahap Pencapaian, Komitmen maksimum 4, Khidmat Sumbangan dan Kehadiran 0–12. Ekstra menyimpan Perkhidmatan, Anugerah Khas, Khidmat Masyarakat maksimum 5 dan NILAM.
-
-Aktiviti Kelab/Beruniform/Sukan akan dipraisi daripada `student_unit_memberships` Portal Koku apabila rekod PAJSK murid masih kosong.
+Password PAJSK adalah **berasingan daripada BMI/SEGAK**. Repo tidak menyimpan plaintext password; hanya SHA-256 dalam `pajsk_settings`.
 
 ## GitHub / deploy frontend
 
@@ -43,12 +50,12 @@ npm install
 npm run build
 ```
 
-Repo frontend tidak memerlukan service-role key atau Supabase anon key. Semua akses database melalui Edge Function.
+Frontend tidak menggunakan Supabase service-role key atau anon key. Semua akses database melalui Edge Function.
 
 ## Supabase source
 
 - `supabase/migrations/001_pajsk_schema.sql`
+- `supabase/migrations/002_pajsk_mainstream_ppki.sql`
+- `supabase/migrations/003_pajsk_idme_reference.sql`
 - `supabase/functions/pajsk-api/`
 - `supabase/functions/pajsk-extension-api/`
-
-Migration source disimpan untuk pemasangan semula; production project telah mempunyai objek ini.

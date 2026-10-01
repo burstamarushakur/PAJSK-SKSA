@@ -1,69 +1,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type,x-extension-key",
-  "Access-Control-Allow-Methods": "POST,OPTIONS",
-};
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
-  status, headers: { ...cors, "Content-Type": "application/json; charset=utf-8" },
-});
-const db = createClient(Deno.env.get("SUPABASE_URL") || "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "", { auth: { persistSession: false } });
-const myid = (v: unknown) => String(v ?? "").replace(/\D/g, "");
-const norm = (v: unknown) => String(v ?? "").toUpperCase().normalize("NFKD").replace(/[^A-Z0-9]+/g, " ").replace(/\s+/g, " ").trim();
-async function sha256(v: string) { const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v)); return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join(""); }
-async function authorized(req: Request) {
-  const raw = req.headers.get("x-extension-key") || "";
-  if (!raw) return false;
-  const { data, error } = await db.from("pajsk_settings").select("value").eq("key", "extension_key_sha256").maybeSingle();
-  if (error) throw error;
-  return Boolean(data?.value) && await sha256(raw) === String(data.value);
-}
-async function sessionFor(year: number) {
-  const { data, error } = await db.from("academic_sessions").select("id,year").eq("year", year).maybeSingle();
-  if (error) throw error; return data;
-}
-function publicRecord(r: any) {
-  if (!r) return null;
-  return { kelabPersatuan:r.kelab_persatuan||null, badanBeruniform:r.badan_beruniform||null, sukanPermainan:r.sukan_permainan||null, ekstraKurikulum:r.ekstra_kurikulum||null, complete:Boolean(r.complete), status:r.status||"draft", source:r.source||"webapp", updatedAt:r.updated_at||null };
-}
-Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
-  if (req.method !== "POST") return json({ success:false,error:"Method not allowed" },405);
-  try {
-    const body = await req.json().catch(()=>({}));
-    const action = String(body.action || "health");
-    if (action === "health") return json({ success:true, service:"pajsk-extension-api", version:"1.0.0" });
-    if (!(await authorized(req))) return json({ success:false,error:"AKSES_EXTENSION_TIDAK_SAH" },401);
-    if (action !== "lookup") return json({ success:false,error:`Action tidak dikenali: ${action}` },400);
-    const year = Number(body.year);
-    const sess = await sessionFor(year);
-    if (!sess) return json({ success:true,found:false,error:"Sesi tidak dijumpai." });
-    const id = myid(body.mykid), name = norm(body.name);
-    let candidates: any[] = [];
-    if (id) {
-      const { data, error } = await db.from("students").select("id,full_name,normalized_name,identification_no,idme_student_id,active").eq("active",true).or(`identification_no.eq.${id},idme_student_id.eq.${id}`).limit(3);
-      if (error) throw error; candidates = data || [];
-    }
-    if (!candidates.length && name) {
-      const { data, error } = await db.from("students").select("id,full_name,normalized_name,identification_no,idme_student_id,active").eq("active",true).eq("normalized_name",name).limit(3);
-      if (error) throw error; candidates = data || [];
-    }
-    const matches: any[] = [];
-    for (const s of candidates) {
-      const { data:e,error } = await db.from("student_enrolments").select("class_id").eq("student_id",s.id).eq("session_id",sess.id).eq("is_current",true).maybeSingle();
-      if (error) throw error; if (!e) continue;
-      const { data:c,error:ce } = await db.from("classes").select("id,code,name,year_level").eq("id",e.class_id).maybeSingle();
-      if (ce) throw ce; matches.push({s,c});
-    }
-    if (!matches.length) return json({ success:true,found:false,error:"Murid tidak dijumpai dalam master Portal Koku untuk sesi ini." });
-    if (matches.length > 1) return json({ success:false,error:"Nama murid tidak unik. Gunakan MyID." },409);
-    const {s,c}=matches[0];
-    const { data:r,error:re } = await db.from("pajsk_student_records").select("*").eq("student_id",s.id).eq("session_year",year).maybeSingle();
-    if (re) throw re;
-    return json({ success:true,found:true,student:{ id:s.id,name:s.full_name,myid:s.identification_no||s.idme_student_id||"",classCode:c?.code||"",className:c?.name||"",yearLevel:c?.year_level??null,sessionYear:year },record:publicRecord(r) });
-  } catch (error) {
-    console.error(error); return json({ success:false,error:error instanceof Error?error.message:String(error) },500);
-  }
-});
+const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"content-type,x-extension-key","Access-Control-Allow-Methods":"POST,OPTIONS"};
+const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,"Content-Type":"application/json; charset=utf-8"}});
+const db=createClient(Deno.env.get("SUPABASE_URL")||"",Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"",{auth:{persistSession:false}});
+const myid=(v:unknown)=>String(v??"").replace(/\D/g,"");
+const norm=(v:unknown)=>String(v??"").toUpperCase().normalize("NFKD").replace(/[^A-Z0-9]+/g," ").replace(/\s+/g," ").trim();
+async function sha256(v:string){const d=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v));return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join("")}
+async function authorized(req:Request){const raw=req.headers.get("x-extension-key")||"";if(!raw)return false;const{data,error}=await db.from("pajsk_settings").select("value").eq("key","extension_key_sha256").maybeSingle();if(error)throw error;return Boolean(data?.value)&&await sha256(raw)===String(data.value)}
+async function sessionFor(year:number){const{data,error}=await db.from("academic_sessions").select("id,year").eq("year",year).maybeSingle();if(error)throw error;return data}
+function publicRecord(r:any){if(!r)return null;return{kelabPersatuan:r.kelab_persatuan||null,badanBeruniform:r.badan_beruniform||null,sukanPermainan:r.sukan_permainan||null,ekstraKurikulum:r.ekstra_kurikulum||null,complete:Boolean(r.complete),status:r.status||"draft",source:r.source||"webapp",updatedAt:r.updated_at||null}}
+Deno.serve(async(req:Request)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:cors});if(req.method!=="POST")return json({success:false,error:"Method not allowed"},405);try{const body=await req.json().catch(()=>({}));const action=String(body.action||"health");if(action==="health")return json({success:true,service:"pajsk-extension-api",version:"2.0.0"});if(!(await authorized(req)))return json({success:false,error:"AKSES_EXTENSION_TIDAK_SAH"},401);if(action!=="lookup")return json({success:false,error:`Action tidak dikenali: ${action}`},400);const year=Number(body.year),sess=await sessionFor(year);if(!sess)return json({success:true,found:false,error:"Sesi tidak dijumpai."});const id=myid(body.mykid),name=norm(body.name);let candidates:any[]=[];if(id){const{data,error}=await db.from("students").select("id,full_name,normalized_name,identification_no,idme_student_id,active").eq("active",true).or(`identification_no.eq.${id},idme_student_id.eq.${id}`).limit(3);if(error)throw error;candidates=data||[]}if(!candidates.length&&name){const{data,error}=await db.from("students").select("id,full_name,normalized_name,identification_no,idme_student_id,active").eq("active",true).eq("normalized_name",name).limit(3);if(error)throw error;candidates=data||[]}const matches:any[]=[];for(const s of candidates){const{data:e,error}=await db.from("student_enrolments").select("class_id").eq("student_id",s.id).eq("session_id",sess.id).eq("is_current",true).maybeSingle();if(error)throw error;if(!e)continue;const{data:c,error:ce}=await db.from("classes").select("id,code,name,year_level").eq("id",e.class_id).maybeSingle();if(ce)throw ce;matches.push({s,c})}if(!matches.length)return json({success:true,found:false,error:"Murid tidak dijumpai dalam master Portal Koku untuk sesi ini."});if(matches.length>1)return json({success:false,error:"Nama murid tidak unik. Gunakan MyID."},409);const{s,c}=matches[0];if(!c||c.year_level<4||c.year_level>6)return json({success:true,found:false,unsupported:true,error:"PAJSK extension arus perdana hanya untuk Tahun 4-6. PPKI menggunakan aliran berasingan."});const{data:r,error:re}=await db.from("pajsk_student_records").select("*").eq("student_id",s.id).eq("session_year",year).maybeSingle();if(re)throw re;if(!r)return json({success:true,found:true,student:{id:s.id,name:s.full_name,myid:s.identification_no||s.idme_student_id||"",classCode:c.code||"",className:c.name||"",yearLevel:c.year_level,sessionYear:year},record:null,error:"Rekod PAJSK belum disediakan dalam webapp."});return json({success:true,found:true,student:{id:s.id,name:s.full_name,myid:s.identification_no||s.idme_student_id||"",classCode:c.code||"",className:c.name||"",yearLevel:c.year_level,sessionYear:year},record:publicRecord(r)})}catch(error){console.error(error);return json({success:false,error:error instanceof Error?error.message:String(error)},500)}});
