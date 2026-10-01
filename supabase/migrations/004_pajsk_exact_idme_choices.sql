@@ -1,0 +1,53 @@
+-- PAJSK v1.2.0: exact SPPB/iDME controls + AHLI AKTIF default.
+create or replace function public.pajsk_idme_position(portal_position text) returns text language sql immutable set search_path=public as $$ select case when portal_position is null or btrim(portal_position)='' then 'AHLI AKTIF' when upper(btrim(portal_position))='PENGERUSI' then 'PENGERUSI' when upper(btrim(portal_position)) like 'NAIB PENGERUSI%' then 'NAIB PENGERUSI' when upper(btrim(portal_position))='SETIAUSAHA' then 'SETIAUSAHA' when upper(btrim(portal_position)) like 'NAIB SETIAUSAHA%' then 'NAIB SETIAUSAHA' when upper(btrim(portal_position))='BENDAHARI' then 'BENDAHARI' when upper(btrim(portal_position)) like 'NAIB BENDAHARI%' then 'NAIB BENDAHARI' when upper(btrim(portal_position)) like 'AJK %' or upper(btrim(portal_position))='AJK' then 'AHLI JAWATANKUASA' else null end $$;
+update public.pajsk_student_records set kelab_persatuan=jsonb_set(jsonb_set(coalesce(kelab_persatuan,'{}'::jsonb),'{jawatan}',to_jsonb('AHLI AKTIF'::text),true),'{positionMappingStatus}',to_jsonb('default_active'::text),true) where session_year=2026 and year_level between 4 and 6 and coalesce(kelab_persatuan->>'portalAktiviti','')<>'' and coalesce(kelab_persatuan->>'portalJawatan','')='' and coalesce(kelab_persatuan->>'jawatan','')='';
+update public.pajsk_student_records set badan_beruniform=jsonb_set(jsonb_set(coalesce(badan_beruniform,'{}'::jsonb),'{jawatan}',to_jsonb('AHLI AKTIF'::text),true),'{positionMappingStatus}',to_jsonb('default_active'::text),true) where session_year=2026 and year_level between 4 and 6 and coalesce(badan_beruniform->>'portalAktiviti','')<>'' and coalesce(badan_beruniform->>'portalJawatan','')='' and coalesce(badan_beruniform->>'jawatan','')='';
+update public.pajsk_student_records set sukan_permainan=jsonb_set(jsonb_set(coalesce(sukan_permainan,'{}'::jsonb),'{jawatan}',to_jsonb('AHLI AKTIF'::text),true),'{positionMappingStatus}',to_jsonb('default_active'::text),true) where session_year=2026 and year_level between 4 and 6 and coalesce(sukan_permainan->>'portalAktiviti','')<>'' and coalesce(sukan_permainan->>'portalJawatan','')='' and coalesce(sukan_permainan->>'jawatan','')='';
+delete from public.pajsk_reference_options where section in ('commitment','service_contribution','extra_service','special_award','community_service');
+with vals(section,ord,label,score,meta) as (values
+  ('commitment',1,'MENUNJUKKAN KEPIMPINAN',3::numeric,'{}'::jsonb),
+  ('commitment',2,'MENGURUS AKTIVITI',3::numeric,'{}'::jsonb),
+  ('commitment',3,'MENYEDIA PERALATAN',2::numeric,'{}'::jsonb),
+  ('commitment',4,'MEMBANTU GURU ATAU RAKAN',2::numeric,'{}'::jsonb),
+  ('commitment',5,'MENGEMAS PERALATAN',2::numeric,'{}'::jsonb),
+  ('commitment',6,'MEMBERSIH KAWASAN',2::numeric,'{}'::jsonb),
+  ('commitment',7,'MENEPATI WAKTU',2::numeric,'{}'::jsonb),
+  ('commitment',8,'MENUNJUKKAN MINAT',2::numeric,'{}'::jsonb),
+  ('commitment',9,'MENUNJUKKAN KESUNGGUHAN',2::numeric,'{}'::jsonb),
+  ('commitment',10,'MENGIKUT ARAHAN',2::numeric,'{}'::jsonb),
+  ('commitment',11,'MENCUBA',2::numeric,'{}'::jsonb),
+  ('commitment',12,'MEMBERI KERJASAMA',2::numeric,'{}'::jsonb),
+  ('commitment',13,'MANA-MANA NILAI MURNI YANG BOLEH DIPERHATIKAN',2::numeric,'{}'::jsonb),
+  ('service_contribution',1,'MURID YANG DIDAFTARKAN SEBAGAI ATLET ATAU PESERTA PROGRAM/ PERTANDINGAN/ KARNIVAL/ KURSUS',10::numeric,'{}'::jsonb),
+  ('service_contribution',2,'MELIBATKAN KEMAHIRAN KHUSUS - BERKAITAN ASPEK TEKNIKAL (PENGADIL, JURULATIH PASUKAN, DAN LAIN-LAIN YANG BERKAITAN ASPEK TEKNIKAL)',10::numeric,'{}'::jsonb),
+  ('service_contribution',3,'PELIBATAN MURID YANG TERLIBAT DALAM AKTIVITI SEPERTI PERSEMBAHAN SELINGAN',8::numeric,'{}'::jsonb),
+  ('service_contribution',4,'MEMBANTU DARI SEGI MENJAYAKAN AKTIVITI KELAB PERSATUAN SUKAN SEKOLAH SEPERTI MENGAMBIL BAHAGIAN DALAM PERBARISAN ATAU PERSEMBAHAN, KUMPULAN SORAK/PENYOKONG, DAN YANG BERKAITAN',5::numeric,'{}'::jsonb),
+  ('extra_service',1,'KETUA MURID/PENGERUSI|10',10::numeric,'{}'::jsonb),
+  ('extra_service',2,'TIMBALAN/PENOLONG KETUA MURID|8',8::numeric,'{}'::jsonb),
+  ('extra_service',3,'PENGAWAS/PENGAWAS PUSAT SUMBER/KETUA ASRAMA/KETUA PRS/KETUA BADAR/KUARTERMASTER/PENGERUSI BADAN PERKHIDMATAN SEKOLAH|7',7::numeric,'{}'::jsonb),
+  ('extra_service',4,'PENOLONG KETUA ASRAMA/PENOLONG KETUA BADAR/AHLI LEMBAGA PENGARAH KOPERASI SEKOLAH|6',6::numeric,'{}'::jsonb),
+  ('extra_service',5,'AJK UTAMA BADAN-BADAN PERKHIDMATAN ATAU PENGURUSAN/BENDAHARI/SETIAUSAHA/KETUA BIRO-ASRAMA/PRS/PENERIMA SIJIL DAN LENCANA SLAD/PROSTAR/PENGAWAS KOPERASI/KETUA KELAS/KETUA TINGKATAN|5',5::numeric,'{}'::jsonb),
+  ('extra_service',6,'AJK KECIL BIRO/KETUA BILIK/KETUA DORM/AJK BADAR/PENERIMA SIJIL SLAD/PENOLONG KETUA KELAS/PENOLONG KETUA BILIK|3',3::numeric,'{}'::jsonb),
+  ('extra_service',7,'PENGAWAS PUSAT SUMBER (TINGKATAN 6)|6',6::numeric,'{}'::jsonb),
+  ('special_award',1,'ANUGERAH REMAJA PERDANA',null::numeric,'{"achievements":["PENERIMA","EMAS","PERAK","GANGSA"]}'::jsonb),
+  ('special_award',2,'PROGRAM KEPIMPINAN GENERASI MADANI - TIER 3',null::numeric,'{"achievements":["PENERIMA"]}'::jsonb),
+  ('special_award',3,'PROGRAM KEPIMPINAN GENERASI MADANI - TIER 2',null::numeric,'{"achievements":["PENERIMA"]}'::jsonb),
+  ('special_award',4,'ANUGERAH PENGAKAP RAJA / RAMBU PENGAKAP KANAK-KANAK',null::numeric,'{"achievements":["PENERIMA"]}'::jsonb),
+  ('special_award',5,'ANUGERAH PANDU PUTERI RAJA / PANDU PUTERI TUNAS KETUA PESURUHJAYA',null::numeric,'{"achievements":["PENERIMA"]}'::jsonb),
+  ('special_award',6,'ANUGERAH PUTERI AZ-ZAHRA / PUTERI BONGSU - PPIM',null::numeric,'{"achievements":["PENERIMA"]}'::jsonb),
+  ('special_award',7,'ANUGERAH GRAND PRIOR / PERISAI PERKHIDMATAN KHAS 1000 JAM EMAS - SJAM',null::numeric,'{"achievements":["PENERIMA"]}'::jsonb),
+  ('special_award',8,'ANUGERAH KHAS KOKURIKULUM DAN SUKAN - KEBANGSAAN',null::numeric,'{"achievements":["PENERIMA"]}'::jsonb),
+  ('special_award',9,'ANUGERAH KHAS KOKURIKULUM DAN SUKAN - NEGERI',null::numeric,'{"achievements":["PENERIMA"]}'::jsonb),
+  ('special_award',10,'ANUGERAH KHAS KOKURIKULUM DAN SUKAN - ZON/DAERAH/BAHAGIAN',null::numeric,'{"achievements":["PENERIMA"]}'::jsonb),
+  ('special_award',11,'ANUGERAH KHAS KOKURIKULUM DAN SUKAN - SEKOLAH',null::numeric,'{"achievements":["PENERIMA"]}'::jsonb),
+  ('special_award',12,'ANUGERAH-ANUGERAH LAIN/PENGHARGAAN KHAS SETARA - KEBANGSAAN',null::numeric,'{"achievements":["PENERIMA"]}'::jsonb),
+  ('special_award',13,'ANUGERAH-ANUGERAH LAIN/PENGHARGAAN KHAS SETARA - NEGERI',null::numeric,'{"achievements":["PENERIMA"]}'::jsonb),
+  ('special_award',14,'ANUGERAH-ANUGERAH LAIN/PENGHARGAAN KHAS SETARA - ZON/DAERAH/BAHAGIAN',null::numeric,'{"achievements":["PENERIMA"]}'::jsonb),
+  ('community_service',1,'AKTIVITI KEJIRANAN / KOMUNITI',1::numeric,'{}'::jsonb),
+  ('community_service',2,'AKTIVITI ALAM SEKITAR',1::numeric,'{}'::jsonb),
+  ('community_service',3,'AKTIVITI BENCANA ALAM',1::numeric,'{}'::jsonb),
+  ('community_service',4,'AKTIVITI KHIDMAT JABATAN / AGENSI',1::numeric,'{}'::jsonb),
+  ('community_service',5,'AKTIVITI KEBUDAYAAN / KESENIAN / INTEGRASI',1::numeric,'{}'::jsonb),
+  ('community_service',6,'AKTIVITI KEROHANIAN',1::numeric,'{}'::jsonb),
+  ('community_service',7,'AKTIVITI INSANIAH',1::numeric,'{}'::jsonb)
+) insert into public.pajsk_reference_options(section,code,label,score,meta,active) select section, lower(regexp_replace(label,'[^A-Za-z0-9]+','_','g')) || '_' || ord::text, label,score,meta || jsonb_build_object('order',ord,'source','SPPB_user_screenshot_2026-10-01'),true from vals;

@@ -99,7 +99,7 @@ export default function App(){
             <div className="studentHead"><div><h2>{selected.name}</h2><p>{selected.myid||'-'} · {selected.className} · Tahun {selected.yearLevel}</p></div><label className="complete"><input type="checkbox" checked={complete} onChange={e=>setComplete(e.target.checked)}/> Pengisian lengkap</label></div>
             <div className="prefillInfo">Aktiviti dan jawatan yang boleh dipadankan telah diambil terus daripada Portal Koku. Nilai disimpan menggunakan label SPPB/iDME supaya extension tidak perlu meneka semasa pemindahan.</div>
             <div className="tabs">{tabs.map(([k,l])=><button className={tab===k?'active':''} key={k} onClick={()=>setTab(k)}>{l}</button>)}</div>
-            {tab==='ekstraKurikulum'?<ExtraForm data={record.ekstraKurikulum} onChange={(v:any)=>setRecord({...record,ekstraKurikulum:v})}/>:<CoreForm category={(activeTab?.[2]||'club') as 'club'|'uniform'|'sport'} refs={refs} data={record[tab]} onChange={(v:any)=>setRecord({...record,[tab]:v})}/>} 
+            {tab==='ekstraKurikulum'?<ExtraForm refs={refs} data={record.ekstraKurikulum} onChange={(v:any)=>setRecord({...record,ekstraKurikulum:v})}/>:<CoreForm category={(activeTab?.[2]||'club') as 'club'|'uniform'|'sport'} refs={refs} data={record[tab]} onChange={(v:any)=>setRecord({...record,[tab]:v})}/>} 
             <div className="savebar"><span>{status}</span><button onClick={save} disabled={busy}><Save size={16}/> {busy?'MENYIMPAN...':'SIMPAN'}</button></div>
           </>}</section>
         </div>}
@@ -111,9 +111,16 @@ export default function App(){
 
 function CoreForm({data,onChange,category,refs}:{data:any,onChange:(v:any)=>void;category:'club'|'uniform'|'sport';refs:RefOption[]}){
   const d=data||emptyCore(); const patch=(x:any)=>onChange({...d,...x});
-  const pel=[0,1,2].map(i=>d.pelibatan?.[i]||{}); const kom=[0,1,2,3].map(i=>d.komitmen?.[i]||'');
+  const pel=[0,1,2].map(i=>d.pelibatan?.[i]||{});
   const activities=refs.filter(x=>x.section===`activity_${category}`).map(x=>x.label);
   const positions=refs.filter(x=>x.section===`position_${category}`).map(x=>x.label);
+  const commitmentOptions=refs.filter(x=>x.section==='commitment');
+  const serviceOptions=refs.filter(x=>x.section==='service_contribution');
+  const selectedCommitments:Array<string>=Array.isArray(d.komitmen)?d.komitmen:[];
+  const toggleCommitment=(label:string)=>{
+    if(selectedCommitments.includes(label)) patch({komitmen:selectedCommitments.filter(x=>x!==label)});
+    else if(selectedCommitments.length<4) patch({komitmen:[...selectedCommitments,label]});
+  };
   return <div className="form">
     <label className="switch"><input type="checkbox" checked={d.ditaksir!==false} onChange={e=>patch({ditaksir:e.target.checked})}/> Ditaksir</label>
     <div className="grid2">
@@ -122,8 +129,15 @@ function CoreForm({data,onChange,category,refs}:{data:any,onChange:(v:any)=>void
     </div>
     <Card title="Pelibatan (maksimum 3)">{pel.map((p,i)=><div className="grid2" key={i}><Field label={`Pelibatan ${i+1} - Peringkat`}><select value={p.peringkat||''} onChange={e=>{const a=[...pel];a[i]={...a[i],peringkat:e.target.value,slot:i+1};patch({pelibatan:a.filter(x=>x.peringkat)})}}>{levels.map(x=><option key={x}>{x}</option>)}</select></Field><Field label="Slot"><input value={i+1} disabled/></Field></div>)}</Card>
     <Card title="Tahap Pencapaian Tertinggi"><div className="grid2"><Field label="Peringkat"><select value={d.pencapaian?.peringkat||''} onChange={e=>patch({pencapaian:{...(d.pencapaian||{}),peringkat:e.target.value}})}>{levels.map(x=><option key={x}>{x}</option>)}</select></Field><Field label="Kedudukan"><select value={d.pencapaian?.kedudukan||''} onChange={e=>patch({pencapaian:{...(d.pencapaian||{}),kedudukan:e.target.value}})}>{places.map(x=><option key={x}>{x}</option>)}</select></Field></div></Card>
-    <Card title="Komitmen (maksimum 4)">{kom.map((x,i)=><Field key={i} label={`Komitmen ${i+1}`}><input value={x} onChange={e=>{const a=[...kom];a[i]=e.target.value;patch({komitmen:a.filter(Boolean)})}}/></Field>)}</Card>
-    <div className="grid2"><Field label="Khidmat Sumbangan"><input value={d.khidmatSumbangan||''} onChange={e=>patch({khidmatSumbangan:e.target.value})}/></Field><Field label="Kehadiran (0-12)"><select value={d.kehadiran??12} onChange={e=>patch({kehadiran:Number(e.target.value)})}>{Array.from({length:13},(_,i)=>i).map(x=><option key={x} value={x}>{x}</option>)}</select></Field></div>
+    <Card title="Komitmen (maksimum 4)">
+      <div className="choiceList">{commitmentOptions.map(o=>{const checked=selectedCommitments.includes(o.label);const disabled=!checked&&selectedCommitments.length>=4;return <label className={`choiceRow ${disabled?'disabled':''}`} key={o.code}><input type="checkbox" checked={checked} disabled={disabled} onChange={()=>toggleCommitment(o.label)}/><span>{o.label}</span><b>{o.score??''}</b></label>})}</div>
+      <div className="choiceSummary">Dipilih: {selectedCommitments.length}/4</div>
+    </Card>
+    <Card title="Khidmat Sumbangan (maksimum 1)">
+      <div className="choiceList">{serviceOptions.map(o=><label className="choiceRow" key={o.code}><input type="radio" name={`service-${category}`} checked={d.khidmatSumbangan===o.label} onChange={()=>patch({khidmatSumbangan:o.label})}/><span>{o.label}</span><b>{o.score??''}</b></label>)}</div>
+      {d.khidmatSumbangan&&<button type="button" className="clearChoice" onClick={()=>patch({khidmatSumbangan:''})}>Kosongkan pilihan</button>}
+    </Card>
+    <Field label="Kehadiran (0-12)"><select value={d.kehadiran??12} onChange={e=>patch({kehadiran:Number(e.target.value)})}>{Array.from({length:13},(_,i)=>i).map(x=><option key={x} value={x}>{x}</option>)}</select></Field>
   </div>
 }
 
@@ -132,10 +146,11 @@ function ExactSelect({value,options,onChange}:{value:string;options:string[];onC
   return <select value={value} onChange={e=>onChange(e.target.value)}><option value="">-- PILIH LABEL iDME --</option>{missing&&<option value={value}>{value} · NILAI SEMASA</option>}{uniq.map(x=><option key={x} value={x}>{x}</option>)}</select>
 }
 function SourceHint({label,value,status}:{label:string;value?:string;status?:string}){
-  if(!value)return <small className="hint warn">{label}: tiada data — pilih nilai iDME secara manual.</small>;
+  if(!value)return <small className={`hint ${status==='default_active'?'ok':'warn'}`}>{status==='default_active'?`${label}: tiada jawatan dalam Portal Koku → AHLI AKTIF`:`${label}: tiada data — pilih nilai iDME secara manual.`}</small>;
   const bad=status==='review'||status==='missing';
   return <small className={`hint ${bad?'warn':'ok'}`}>{label}: <b>{value}</b>{bad?' · perlu semak/pilih padanan iDME':''}</small>
 }
+
 function PpkiPanel({students,setStudents,onSave,busy,status}:{students:PpkiStudent[];setStudents:(v:PpkiStudent[])=>void;onSave:()=>void;busy:boolean;status:string}){
   const selected=students.filter(x=>x.selected).length;
   const grouped=students.reduce((m:Record<string,PpkiStudent[]>,s)=>{(m[s.classCode]??=[]).push(s);return m},{});
@@ -146,9 +161,40 @@ function PpkiPanel({students,setStudents,onSave,busy,status}:{students:PpkiStude
     <div className="savebar ppkiSave"><span>{status}</span><button onClick={onSave} disabled={busy}><Save size={16}/> {busy?'MENYIMPAN...':'SIMPAN PILIHAN PPKI'}</button></div>
   </section>
 }
-function ExtraForm({data,onChange}:{data:any,onChange:(v:any)=>void}){
-  const d=data||emptyExtra(); const patch=(x:any)=>onChange({...d,...x}); const c=[0,1,2,3,4].map(i=>d.khidmatMasyarakat?.[i]||{});
-  return <div className="form"><label className="switch"><input type="checkbox" checked={d.ditaksir!==false} onChange={e=>patch({ditaksir:e.target.checked})}/> Ditaksir</label><Card title="Perkhidmatan"><div className="grid2"><Field label="Jawatan / Perkhidmatan"><input value={d.perkhidmatan?.label||''} onChange={e=>patch({perkhidmatan:{...(d.perkhidmatan||{}),label:e.target.value}})}/></Field><Field label="Skor"><input type="number" value={d.perkhidmatan?.score??''} onChange={e=>patch({perkhidmatan:{...(d.perkhidmatan||{}),score:e.target.value===''?null:Number(e.target.value)}})}/></Field></div></Card><Card title="Anugerah Khas"><div className="grid2"><Field label="Anugerah"><input value={d.anugerahKhas?.name||''} onChange={e=>patch({anugerahKhas:{...(d.anugerahKhas||{}),name:e.target.value}})}/></Field><Field label="Pencapaian"><select value={d.anugerahKhas?.achievement||''} onChange={e=>patch({anugerahKhas:{...(d.anugerahKhas||{}),achievement:e.target.value}})}>{['','PENERIMA','EMAS','PERAK','GANGSA'].map(x=><option key={x}>{x}</option>)}</select></Field></div></Card><Card title="Khidmat Masyarakat (maksimum 5)">{c.map((x,i)=><div className="grid2" key={i}><Field label={`Aktiviti ${i+1}`}><input value={x.activity||''} onChange={e=>{const a=[...c];a[i]={...a[i],activity:e.target.value,count:a[i]?.count||1};patch({khidmatMasyarakat:a.filter(v=>v.activity)})}}/></Field><Field label="Bilangan"><select value={x.count||1} onChange={e=>{const a=[...c];a[i]={...a[i],count:Number(e.target.value)};patch({khidmatMasyarakat:a.filter(v=>v.activity)})}}>{[1,2,3,4,5].map(n=><option key={n} value={n}>{n}</option>)}</select></Field></div>)}</Card><Field label="Program NILAM"><select value={d.nilamStars||''} onChange={e=>patch({nilamStars:e.target.value?Number(e.target.value):null})}><option value=""></option>{[1,2,3,4,5].map(n=><option key={n} value={n}>{n} BINTANG</option>)}</select></Field></div>
+function ExtraForm({data,onChange,refs}:{data:any,onChange:(v:any)=>void;refs:RefOption[]}){
+  const d=data||emptyExtra(); const patch=(x:any)=>onChange({...d,...x});
+  const services=refs.filter(x=>x.section==='extra_service');
+  const awards=refs.filter(x=>x.section==='special_award');
+  const community=refs.filter(x=>x.section==='community_service');
+  const communityRows=community.map(o=>{
+    const saved=(Array.isArray(d.khidmatMasyarakat)?d.khidmatMasyarakat:[]).find((x:any)=>x.activity===o.label);
+    return {option:o,count:Number(saved?.count||0)};
+  });
+  const totalCommunity=communityRows.reduce((a,x)=>a+x.count,0);
+  const serviceValue=d.perkhidmatan?.label||'';
+  const awardName=d.anugerahKhas?.name||'';
+  const awardAchievement=d.anugerahKhas?.achievement||'';
+  const setCommunity=(label:string,count:number)=>{
+    const existing=Array.isArray(d.khidmatMasyarakat)?d.khidmatMasyarakat:[];
+    const rest=existing.filter((x:any)=>x.activity!==label);
+    patch({khidmatMasyarakat:count>0?[...rest,{activity:label,count}]:rest});
+  };
+  return <div className="form">
+    <label className="switch"><input type="checkbox" checked={d.ditaksir!==false} onChange={e=>patch({ditaksir:e.target.checked})}/> Ditaksir</label>
+    <Card title="Perkhidmatan">
+      <Field label="Perkhidmatan (ikut dropdown iDME)"><select value={serviceValue} onChange={e=>{const o=services.find(x=>x.label===e.target.value);patch({perkhidmatan:o?{label:o.label,score:o.score??null}:null})}}><option value="">-- TIADA / PILIH --</option>{services.map(o=><option key={o.code} value={o.label}>{o.label}</option>)}</select></Field>
+      {d.perkhidmatan&&<div className="choiceSummary">Skor: {d.perkhidmatan.score??'-'}</div>}
+    </Card>
+    <Card title="Anugerah Khas (maksimum 1)">
+      <div className="awardTable"><div className="awardHead"><b>PERKARA</b><b>PENERIMA</b><b>EMAS</b><b>PERAK</b><b>GANGSA</b></div>{awards.map(o=>{const allowed:Array<string>=Array.isArray(o.meta?.achievements)?o.meta.achievements:['PENERIMA'];return <div className="awardRow" key={o.code}><span>{o.label}</span>{['PENERIMA','EMAS','PERAK','GANGSA'].map(a=><label key={a} className={!allowed.includes(a)?'notAllowed':''}><input type="radio" name="special-award" disabled={!allowed.includes(a)} checked={awardName===o.label&&awardAchievement===a} onChange={()=>patch({anugerahKhas:{name:o.label,achievement:a}})}/></label>)}</div>})}</div>
+      {awardName&&<button type="button" className="clearChoice" onClick={()=>patch({anugerahKhas:null})}>Kosongkan anugerah</button>}
+    </Card>
+    <Card title="Khidmat Masyarakat (maksimum 5)">
+      <div className="communityTable">{communityRows.map(({option:o,count})=>{const other=totalCommunity-count;const max=Math.max(0,5-other);return <div className="communityRow" key={o.code}><span>{o.label}</span><label>Bilangan <select value={count} onChange={e=>setCommunity(o.label,Number(e.target.value))}>{Array.from({length:max+1},(_,i)=>i).map(n=><option key={n} value={n}>{n}</option>)}</select></label></div>})}</div>
+      <div className="choiceSummary">Jumlah aktiviti: {totalCommunity}/5</div>
+    </Card>
+    <Field label="Program NILAM"><select value={d.nilamStars||''} onChange={e=>patch({nilamStars:e.target.value?Number(e.target.value):null})}><option value=""></option>{[1,2,3,4,5].map(n=><option key={n} value={n}>{n} BINTANG</option>)}</select></Field>
+  </div>
 }
 function Field({label,children}:{label:string;children:any}){return <label className="field"><span>{label}</span>{children}</label>}
 function Card({title,children}:{title:string;children:any}){return <div className="card"><h4>{title}</h4>{children}</div>}

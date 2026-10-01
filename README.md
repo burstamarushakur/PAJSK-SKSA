@@ -59,3 +59,11 @@ Frontend tidak menggunakan Supabase service-role key atau anon key. Semua akses 
 - `supabase/migrations/003_pajsk_idme_reference.sql`
 - `supabase/functions/pajsk-api/`
 - `supabase/functions/pajsk-extension-api/`
+
+
+## v1.2.0
+- Jawatan kosong dari Portal Koku dipraisi sebagai **AHLI AKTIF**.
+- Komitmen ditukar kepada senarai checkbox iDME (maksimum 4).
+- Khidmat Sumbangan ditukar kepada pilihan tunggal iDME.
+- Ekstra Kurikulum Perkhidmatan, Anugerah Khas dan Khidmat Masyarakat menggunakan pilihan berstruktur, bukan input teks bebas.
+- Khidmat Masyarakat menggunakan 7 kategori PAJSK dan jumlah maksimum 5 aktiviti.
