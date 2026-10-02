@@ -61,6 +61,12 @@ Frontend tidak menggunakan Supabase service-role key atau anon key. Semua akses 
 - `supabase/functions/pajsk-extension-api/`
 
 
+
+## v1.2.1
+- Betulkan Pelibatan 1/2/3 supaya setiap slot adalah bebas.
+- Pilihan pada slot 2 atau slot 3 tidak lagi berpindah ke slot 1 selepas simpan / muat semula.
+- Format simpan kekal sebagai objek `{ slot, peringkat }` untuk extension SPPB/iDME.
+
 ## v1.2.0
 - Jawatan kosong dari Portal Koku dipraisi sebagai **AHLI AKTIF**.
 - Komitmen ditukar kepada senarai checkbox iDME (maksimum 4).

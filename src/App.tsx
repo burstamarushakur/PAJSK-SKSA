@@ -111,7 +111,14 @@ export default function App(){
 
 function CoreForm({data,onChange,category,refs}:{data:any,onChange:(v:any)=>void;category:'club'|'uniform'|'sport';refs:RefOption[]}){
   const d=data||emptyCore(); const patch=(x:any)=>onChange({...d,...x});
-  const pel=[0,1,2].map(i=>d.pelibatan?.[i]||{});
+  const savedPelibatan:Array<any>=Array.isArray(d.pelibatan)?d.pelibatan:[];
+  // Pelibatan 1/2/3 ialah slot bebas, bukan senarai berturutan.
+  // Contoh: hanya slot 2 boleh diisi tanpa slot 1. Gunakan `slot` untuk
+  // meletakkan semula nilai pada dropdown yang betul selepas save/reload.
+  const pel=[1,2,3].map(slot=>{
+    const found=savedPelibatan.find((x:any,index:number)=>Number(x?.slot??(index+1))===slot);
+    return found?{...found,slot}:{slot,peringkat:''};
+  });
   const activities=refs.filter(x=>x.section===`activity_${category}`).map(x=>x.label);
   const positions=refs.filter(x=>x.section===`position_${category}`).map(x=>x.label);
   const commitmentOptions=refs.filter(x=>x.section==='commitment');
@@ -127,7 +134,13 @@ function CoreForm({data,onChange,category,refs}:{data:any,onChange:(v:any)=>void
       <Field label="Aktiviti Kokurikulum (label iDME)"><ExactSelect value={d.aktiviti||''} options={activities} onChange={v=>patch({aktiviti:v,activityMappingStatus:'manual'})}/><SourceHint label="Portal Koku" value={d.portalAktiviti} status={d.activityMappingStatus}/></Field>
       <Field label="Jawatan (label iDME)"><ExactSelect value={d.jawatan||''} options={positions} onChange={v=>patch({jawatan:v,positionMappingStatus:'manual'})}/><SourceHint label="Jawatan Portal Koku" value={d.portalJawatan} status={d.positionMappingStatus}/></Field>
     </div>
-    <Card title="Pelibatan (maksimum 3)">{pel.map((p,i)=><div className="grid2" key={i}><Field label={`Pelibatan ${i+1} - Peringkat`}><select value={p.peringkat||''} onChange={e=>{const a=[...pel];a[i]={...a[i],peringkat:e.target.value,slot:i+1};patch({pelibatan:a.filter(x=>x.peringkat)})}}>{levels.map(x=><option key={x}>{x}</option>)}</select></Field><Field label="Slot"><input value={i+1} disabled/></Field></div>)}</Card>
+    <Card title="Pelibatan (maksimum 3)">{pel.map((p,i)=><div className="grid2" key={i}><Field label={`Pelibatan ${i+1} - Peringkat`}><select value={p.peringkat||''} onChange={e=>{
+      const a=pel.map((row:any)=>({...row}));
+      a[i]={...a[i],peringkat:e.target.value,slot:i+1};
+      // Simpan hanya slot yang berisi, tetapi kekalkan nombor slot asal.
+      // Jangan compact/reindex kerana slot 2 atau 3 boleh wujud sendiri.
+      patch({pelibatan:a.filter((x:any)=>String(x.peringkat||'').trim()).map((x:any)=>({slot:Number(x.slot),peringkat:x.peringkat}))});
+    }}>{levels.map(x=><option key={x}>{x}</option>)}</select></Field><Field label="Slot"><input value={i+1} disabled/></Field></div>)}</Card>
     <Card title="Tahap Pencapaian Tertinggi"><div className="grid2"><Field label="Peringkat"><select value={d.pencapaian?.peringkat||''} onChange={e=>patch({pencapaian:{...(d.pencapaian||{}),peringkat:e.target.value}})}>{levels.map(x=><option key={x}>{x}</option>)}</select></Field><Field label="Kedudukan"><select value={d.pencapaian?.kedudukan||''} onChange={e=>patch({pencapaian:{...(d.pencapaian||{}),kedudukan:e.target.value}})}>{places.map(x=><option key={x}>{x}</option>)}</select></Field></div></Card>
     <Card title="Komitmen (maksimum 4)">
       <div className="choiceList">{commitmentOptions.map(o=>{const checked=selectedCommitments.includes(o.label);const disabled=!checked&&selectedCommitments.length>=4;return <label className={`choiceRow ${disabled?'disabled':''}`} key={o.code}><input type="checkbox" checked={checked} disabled={disabled} onChange={()=>toggleCommitment(o.label)}/><span>{o.label}</span><b>{o.score??''}</b></label>})}</div>
