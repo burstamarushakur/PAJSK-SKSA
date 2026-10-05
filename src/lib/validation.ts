@@ -27,9 +27,8 @@ export function extraWarnings(data: any): FormWarnings {
   const d = data || {};
   if (d.ditaksir === false) return {};
   const errors: FormWarnings = {};
-  // Perkhidmatan/Jawatan is intentionally optional for pupils without a role.
-  if (!filled(d.anugerahKhas?.name) || !filled(d.anugerahKhas?.achievement))
-    errors.anugerahKhas = 'Anugerah Khas belum dipilih atau belum lengkap.';
+  // Perkhidmatan/Jawatan and Anugerah Khas are optional. Many pupils have
+  // neither a role nor an award; blank values must not trigger warnings.
   const rows = Array.isArray(d.khidmatMasyarakat) ? d.khidmatMasyarakat : [];
   if (!rows.some((r: any) => filled(r?.activity) && integerInRange(r?.count, 1, 5)))
     errors.khidmatMasyarakat = 'Khidmat Masyarakat belum diisi.';

@@ -1,11 +1,11 @@
 # PAJSK SKSA — Supabase Edition
 
-## Kemas kini v1.2.2 — amaran medan belum lengkap
+## Kemas kini v1.2.3 — amaran medan belum lengkap
 
 - Medan kosong ditanda merah serta disenaraikan di bawah setiap tab. Jumlah amaran dipaparkan pada butang tab.
 - SIMPAN tetap dibenarkan walaupun ada amaran. Amaran dikira semula serta-merta apabila guru mengubah pilihan.
 - Kelab/Persatuan, Badan Beruniform dan Sukan/Permainan: semak Aktiviti, Jawatan, sekurang-kurangnya satu slot Pelibatan, kedua-dua medan Pencapaian, sekurang-kurangnya satu Komitmen (maksimum empat), Khidmat Sumbangan dan Kehadiran (0–12).
-- Ekstra Kurikulum: Perkhidmatan/Jawatan boleh kosong tanpa amaran. Anugerah Khas, Khidmat Masyarakat dan NILAM yang kosong masih diberi amaran seperti permintaan pengisian.
+- Ekstra Kurikulum: Perkhidmatan/Jawatan dan Anugerah Khas ialah pilihan sahaja; boleh kosong tanpa amaran. Khidmat Masyarakat dan NILAM yang kosong masih diberi amaran seperti permintaan pengisian.
 - Ini semakan kelengkapan webapp; bukan pengesahan penerimaan oleh iDME. Amaran tidak mengisi jawapan atau mencipta pencapaian murid secara automatik.
 - Bahagian dengan Ditaksir tidak ditanda dikecualikan. Nilai kehadiran 0 sah; nilai kosong tidak lagi dipaparkan sebagai 12.
 - Pilihan “Pengisian lengkap” kekal manual. Jika ditanda ketika masih ada amaran, peringatan tambahan dipaparkan.
@@ -26,7 +26,7 @@ npm test
 npm run build
 ```
 
-Sembilan ujian validasi lulus. Ujian interaksi pelayar dengan API tiruan juga lulus: amaran keempat-empat tab, amaran hilang secara langsung, pengecualian Perkhidmatan Ekstra, Ditaksir, SIMPAN ketika tidak lengkap, pengekalan payload asal, slot Pelibatan 2, kehadiran 0 dan lebar paparan telefon. Tiada data produksi digunakan dalam ujian.
+Sembilan ujian validasi lulus. Ujian interaksi pelayar dengan API tiruan juga lulus: amaran keempat-empat tab, amaran hilang secara langsung, pengecualian Perkhidmatan Ekstra dan Anugerah Khas, Ditaksir, SIMPAN ketika tidak lengkap, pengekalan payload asal, slot Pelibatan 2, kehadiran 0 dan lebar paparan telefon. Tiada data produksi digunakan dalam ujian.
 
 ---
 

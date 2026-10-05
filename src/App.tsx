@@ -103,7 +103,7 @@ export default function App(){
             <div className="studentHead"><div><h2>{selected.name}</h2><p>{selected.myid||'-'} · {selected.className} · Tahun {selected.yearLevel}</p></div><label className="complete"><input type="checkbox" checked={complete} onChange={e=>setComplete(e.target.checked)}/> Pengisian lengkap</label></div>
             <div className="prefillInfo">Aktiviti dan jawatan yang boleh dipadankan telah diambil terus daripada Portal Koku. Nilai disimpan menggunakan label SPPB/iDME supaya extension tidak perlu meneka semasa pemindahan.</div>
             <div className="tabs">{tabs.map(([k,l])=>{const count=Object.keys(warningsByTab[k]).length;return <button className={`${tab===k?'active':''} ${count?'hasWarnings':''}`} key={k} onClick={()=>setTab(k)}>{l}{count>0&&<span className="warningBadge" aria-label={`${count} amaran`}>! {count}</span>}</button>})}</div>
-            <div className="validationInfo">Medan bertanda merah perlu disemak. SIMPAN tetap boleh digunakan untuk sambung kemudian. Perkhidmatan/Jawatan Ekstra Kurikulum boleh dikosongkan jika tiada jawatan.</div>
+            <div className="validationInfo">Medan bertanda merah perlu disemak. SIMPAN tetap boleh digunakan untuk sambung kemudian. Perkhidmatan/Jawatan dan Anugerah Khas Ekstra Kurikulum ialah pilihan sahaja; boleh dikosongkan jika tidak berkenaan.</div>
             {complete&&warningCount>0&&<div className="completionWarning" role="status">“Pengisian lengkap” ditanda, tetapi masih ada {warningCount} amaran medan. Semak tab bertanda merah sebelum pemindahan ke iDME.</div>}
             {tab==='ekstraKurikulum'?<ExtraForm refs={refs} data={record.ekstraKurikulum} onChange={(v:any)=>setRecord({...record,ekstraKurikulum:v})}/>:<CoreForm category={(activeTab?.[2]||'club') as 'club'|'uniform'|'sport'} refs={refs} data={record[tab]} onChange={(v:any)=>setRecord({...record,[tab]:v})}/>} 
             <div className="savebar"><span>{status}</span><button onClick={save} disabled={busy}><Save size={16}/> {busy?'MENYIMPAN...':'SIMPAN'}</button></div>
@@ -208,7 +208,8 @@ function ExtraForm({data,onChange,refs}:{data:any,onChange:(v:any)=>void;refs:Re
       <Field label="Perkhidmatan (ikut dropdown iDME)"><select value={serviceValue} onChange={e=>{const o=services.find(x=>x.label===e.target.value);patch({perkhidmatan:o?{label:o.label,score:o.score??null}:null})}}><option value="">-- TIADA / PILIH --</option>{services.map(o=><option key={o.code} value={o.label}>{o.label}</option>)}</select></Field>
       {d.perkhidmatan&&<div className="choiceSummary">Skor: {d.perkhidmatan.score??'-'}</div>}
     </Card>
-    <Card title="Anugerah Khas (maksimum 1)" error={errors.anugerahKhas}>
+    <Card title="Anugerah Khas (pilihan, maksimum 1)">
+      <p className="optionalNote">Tidak wajib — biarkan kosong jika murid tidak menerima anugerah. Tiada amaran akan diberikan.</p>
       <div className="awardTable"><div className="awardHead"><b>PERKARA</b><b>PENERIMA</b><b>EMAS</b><b>PERAK</b><b>GANGSA</b></div>{awards.map(o=>{const allowed:Array<string>=Array.isArray(o.meta?.achievements)?o.meta.achievements:['PENERIMA'];return <div className="awardRow" key={o.code}><span>{o.label}</span>{['PENERIMA','EMAS','PERAK','GANGSA'].map(a=><label key={a} className={!allowed.includes(a)?'notAllowed':''}><input type="radio" name="special-award" disabled={!allowed.includes(a)} checked={awardName===o.label&&awardAchievement===a} onChange={()=>patch({anugerahKhas:{name:o.label,achievement:a}})}/></label>)}</div>})}</div>
       {awardName&&<button type="button" className="clearChoice" onClick={()=>patch({anugerahKhas:null})}>Kosongkan anugerah</button>}
     </Card>
