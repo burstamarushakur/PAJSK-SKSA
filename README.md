@@ -1,5 +1,46 @@
 # PAJSK SKSA — Supabase Edition
 
+## Kemas kini v1.3.0 — grid murid, popup dan animasi Unit Koku
+
+- Klik kelas untuk melihat semua murid dalam grid kad. Setiap kad memaparkan empat kategori dan bilangan medan yang perlu disemak, menggunakan validasi asal.
+- Klik kad/nama murid untuk membuka borang asal dalam popup besar. Borang mempunyai scroll sendiri; tajuk, X dan SIMPAN kekal mudah dicapai.
+- Selepas SIMPAN berjaya, kad murid dan kiraan lengkap pada kelas dikemas kini. Penanda “Pengisian lengkap” masih dikawal oleh guru seperti sebelum ini.
+- X atau Escape menutup popup dan kembali ke grid kelas yang sama. Jika ada perubahan belum disimpan, pengesahan dipaparkan sebelum membuang perubahan tersebut.
+- Logo Unit Koku dengan dua garisan pastel bercahaya berpusing mengikut arah jam dan lawan arah jam dipaparkan ketika memuatkan data, membuka borang dan menyimpan.
+- Logo dibundel dalam `public/logo-unit-koku.png`, jadi animasi tidak bergantung pada Postimg semasa digunakan.
+- Hanya selepas API mengesahkan simpan berjaya, mesej berikut dipaparkan bersama 26 hati kecil yang naik dan pudar:
+
+  **MAKLUMAT TELAH DISIMPAN RAPI SEPERTI SAYA SIMPAN RAHSIA KITA BERDUA**
+
+- Kegagalan simpan memaparkan ralat dan mengekalkan isian untuk dicuba semula. Tiada mesej kejayaan atau hati dipaparkan untuk simpan yang gagal.
+- Animasi juga digunakan pada simpan pilihan PPKI. Susun atur responsif dan tetapan reduced motion disokong.
+
+### Cara upload semula ke GitHub
+
+1. Extract ZIP ini.
+2. Buka folder `PAJSK-SKSA-main` dan upload **kandungannya** ke root repo frontend sedia ada (tempat `package.json` berada). Jangan letakkan satu lagi folder projek di dalam root repo.
+3. Gantikan fail sedia ada dan pastikan folder baharu `public/` turut dimuat naik.
+4. Commit dan deploy menggunakan proses sedia ada. Kekalkan environment variable dan tetapan hosting sedia ada.
+
+Fail berubah untuk v1.3.0: `src/App.tsx`, `src/index.css`, `README.md`, `package.json`, `package-lock.json`. Fail baharu: `public/logo-unit-koku.png`.
+
+API, validasi asal dan semua fail `supabase/` tidak berubah. **Tidak perlu SQL/migration atau deploy semula Supabase Edge Function.** ZIP tidak mengandungi `node_modules/` atau `dist/` dan belum dideploy.
+
+### Semakan v1.3.0
+
+```bash
+npm ci
+npm run lint
+npm test
+npm run build
+```
+
+TypeScript, sembilan ujian validasi dan build produksi lulus. Ujian interaksi Chromium dengan API tiruan turut lulus: kiraan empat kategori pada kad, popup, simpan slot Pelibatan 2 dan kehadiran 0, overlay loading, dua arah putaran, mesej kejayaan selepas respons pelayan, 26 hati, X/buka semula, kemas kini kiraan kelas, kegagalan simpan, pengesahan perubahan belum disimpan, paparan telefon 390px, PPKI dan reduced motion. Tiada ralat JavaScript pelayar. Ujian simpan sebenar ke Supabase perlu dibuat selepas deploy menggunakan akses sistem anda.
+
+---
+
+## Catatan versi asal
+
 ## Kemas kini v1.2.3 — amaran medan belum lengkap
 
 - Medan kosong ditanda merah serta disenaraikan di bawah setiap tab. Jumlah amaran dipaparkan pada butang tab.

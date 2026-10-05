@@ -1,5 +1,5 @@
-import { Children, cloneElement, isValidElement, useId, useMemo, useState } from 'react';
-import { CheckCircle2, Circle, LogOut, RefreshCw, Save, UsersRound } from 'lucide-react';
+import { Children, cloneElement, isValidElement, useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { CheckCircle2, Circle, X, LogOut, RefreshCw, Save, UsersRound } from 'lucide-react';
 import { apiCall } from './lib/api';
 import { coreWarnings, extraWarnings, type FormWarnings } from './lib/validation';
 
@@ -10,6 +10,8 @@ type RefOption={section:string;code:string;label:string;score?:number|null;meta?
 type PpkiStudent={id:string;name:string;myid:string;classCode:string;className:string;selected:boolean};
 
 const LOGO='https://i.postimg.cc/3RF9M05N/Logo-SKSA.png';
+const KOKU_LOGO=`${import.meta.env.BASE_URL}logo-unit-koku.png`;
+const SAVED_MESSAGE='MAKLUMAT TELAH DISIMPAN RAPI SEPERTI SAYA SIMPAN RAHSIA KITA BERDUA';
 const tabs=[['kelabPersatuan','Kelab & Persatuan','club'],['badanBeruniform','Badan Beruniform','uniform'],['sukanPermainan','Sukan & Permainan','sport'],['ekstraKurikulum','Ekstra Kurikulum','extra']] as const;
 const levels=['','ANTARABANGSA','KEBANGSAAN','NEGERI','BAHAGIAN (SABAH/SARAWAK)','ZON/DAERAH','SEKOLAH'];
 const places=['','JOHAN','NAIB JOHAN','KETIGA','KEEMPAT','KELIMA'];
@@ -36,6 +38,9 @@ export default function App(){
   const [students,setStudents]=useState<Student[]>([]); const [selectedId,setSelectedId]=useState('');
   const [record,setRecord]=useState<any>(null); const [tab,setTab]=useState<string>('kelabPersatuan');
   const [complete,setComplete]=useState(false); const [busy,setBusy]=useState(false); const [status,setStatus]=useState('');
+  const [busyLabel,setBusyLabel]=useState('Memuatkan maklumat...');
+  const [saveSuccess,setSaveSuccess]=useState(0);
+  const dismissSuccess=useCallback(()=>setSaveSuccess(0),[]);
   const [ppki,setPpki]=useState<PpkiStudent[]>([]);
 
   const selected=useMemo(()=>students.find(s=>s.id===selectedId)||null,[students,selectedId]);
@@ -45,7 +50,8 @@ export default function App(){
   const warningCount=Object.values(warningsByTab).reduce((n,issues)=>n+Object.keys(issues).length,0);
 
   async function login(){
-    setBusy(true);setLoginError('');
+    if(busy)return;
+    setBusyLabel('Menyemak akses sistem...');setBusy(true);setLoginError('');
     try{
       const [d,r]:any[]=await Promise.all([apiCall('getConfig',{},password),apiCall('getReferenceOptions',{},password)]);
       sessionStorage.setItem('pajsk_app_password',password);
@@ -56,40 +62,62 @@ export default function App(){
     }catch(e:any){setLoginError(e.message||String(e));}finally{setBusy(false)}
   }
   async function loadClasses(y=year,pw?:string){
-    setBusy(true);setStatus('');
+    setBusyLabel('Memuatkan maklumat...');setBusy(true);setStatus('');
     try{const d:any=await apiCall('getClasses',{year:y},pw);setClasses(d.classes||[]);setClassCode('');setStudents([]);setSelectedId('');setRecord(null);}
     catch(e:any){setStatus(e.message);}finally{setBusy(false)}
   }
   async function loadStudents(code:string){
-    setBusy(true);setStatus('');
+    setBusyLabel('Memuatkan maklumat...');setBusy(true);setStatus('');
     try{const d:any=await apiCall('getStudents',{year,classCode:code});setStudents(d.students||[]);setClassCode(code);setSelectedId('');setRecord(null);}
     catch(e:any){setStatus(e.message);}finally{setBusy(false)}
   }
   async function loadPpki(y=year,pw?:string){
-    setBusy(true);setStatus('');
+    setBusyLabel('Memuatkan maklumat...');setBusy(true);setStatus('');
     try{const d:any=await apiCall('getPpkiStudents',{year:y},pw);setPpki(d.students||[]);}
     catch(e:any){setStatus(e.message);}finally{setBusy(false)}
   }
   async function switchMode(next:'mainstream'|'ppki'){
-    setMode(next);setStatus('');setClassCode('');setStudents([]);setSelectedId('');setRecord(null);
+    setSaveSuccess(0);setMode(next);setStatus('');setClassCode('');setStudents([]);setSelectedId('');setRecord(null);
     if(next==='ppki') await loadPpki(); else await loadClasses();
   }
   async function changeYear(y:number){
-    setYear(y);setClassCode('');setStudents([]);setSelectedId('');setRecord(null);
+    setSaveSuccess(0);setYear(y);setClassCode('');setStudents([]);setSelectedId('');setRecord(null);
     if(mode==='ppki')await loadPpki(y);else await loadClasses(y);
   }
-  function chooseStudent(s:Student){setSelectedId(s.id);setRecord(initRecord(s));setComplete(!!s.complete);setTab('kelabPersatuan');setStatus('');}
+  async function chooseStudent(s:Student){
+    if(busy)return;
+    setBusyLabel('Membuka borang murid...');setBusy(true);setSaveSuccess(0);
+    // Give the loading indicator a painted frame before mounting the long form.
+    await new Promise(resolve=>window.setTimeout(resolve,280));
+    setSelectedId(s.id);setRecord(initRecord(s));setComplete(!!s.complete);setTab('kelabPersatuan');setStatus('');setBusy(false);
+  }
+  function closeStudent(){
+    if(busy)return;
+    const changed=selected&&(JSON.stringify(record)!==JSON.stringify(initRecord(selected))||complete!==!!selected.complete);
+    if(changed&&!window.confirm('Perubahan belum disimpan. Tutup borang dan buang perubahan ini?'))return;
+    setSelectedId('');setRecord(null);setStatus('');setSaveSuccess(0);
+  }
   async function save(){
-    if(!selected||!record)return;setBusy(true);
-    try{const d:any=await apiCall('saveStudent',{year,studentId:selected.id,record,complete});setStatus(`Rekod PAJSK berjaya disimpan.${warningCount?` Masih ada ${warningCount} amaran medan untuk disemak.`:''}`);setStudents(v=>v.map(s=>s.id===selected.id?{...s,record:clone(d.record),complete:!!d.complete,status:d.status}:s));}
-    catch(e:any){setStatus(e.message);}finally{setBusy(false)}
+    if(!selected||!record||busy)return;
+    setBusyLabel('Menyimpan maklumat ke Supabase...');setBusy(true);setStatus('');setSaveSuccess(0);
+    try{
+      const d:any=await apiCall('saveStudent',{year,studentId:selected.id,record,complete});
+      const updated={...selected,record:clone(d.record),complete:!!d.complete,status:d.status};
+      setStudents(v=>v.map(s=>s.id===selected.id?updated:s));
+      setClasses(v=>v.map(c=>c.code===classCode?{...c,complete:c.complete+Number(updated.complete)-Number(selected.complete)}:c));
+      setRecord(initRecord(updated));setComplete(updated.complete);
+      setStatus('Rekod PAJSK berjaya disimpan.');setSaveSuccess(Date.now());
+    }catch(e:any){setStatus(`Gagal menyimpan: ${e.message||String(e)}. Sila cuba semula.`);}finally{setBusy(false)}
   }
   async function savePpki(){
-    setBusy(true);try{const selectedIds=ppki.filter(x=>x.selected).map(x=>x.id);const d:any=await apiCall('savePpkiSelections',{year,selectedIds});setStatus(`Pilihan PPKI disimpan: ${d.selectedCount} murid.`);}catch(e:any){setStatus(e.message);}finally{setBusy(false)}
+    if(busy)return;
+    setBusyLabel('Menyimpan pilihan PPKI ke Supabase...');setBusy(true);setStatus('');setSaveSuccess(0);
+    try{const selectedIds=ppki.filter(x=>x.selected).map(x=>x.id);const d:any=await apiCall('savePpkiSelections',{year,selectedIds});setStatus(`Pilihan PPKI disimpan: ${d.selectedCount} murid.`);setSaveSuccess(Date.now());}
+    catch(e:any){setStatus(`Gagal menyimpan: ${e.message||String(e)}. Sila cuba semula.`);}finally{setBusy(false)}
   }
   function logout(){sessionStorage.removeItem('pajsk_app_password');setLogged(false);setPassword('');setClasses([]);setStudents([]);setPpki([]);setRecord(null)}
 
-  if(!logged)return <div className="login"><div className="loginCard"><img src={LOGO}/><h1>SISTEM PAJSK SKSA</h1><p>SEKOLAH KEBANGSAAN SUNGAI ABONG</p><input type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()} placeholder="Password sistem"/><button onClick={login} disabled={busy}>{busy?'Menyemak...':'MASUK'}</button>{loginError&&<div className="error">{loginError}</div>}</div></div>;
+  if(!logged)return <div className="login"><div className="loginCard"><img src={LOGO}/><h1>SISTEM PAJSK SKSA</h1><p>SEKOLAH KEBANGSAAN SUNGAI ABONG</p><input type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==='Enter'&&!busy&&login()} placeholder="Password sistem"/><button onClick={login} disabled={busy}>{busy?'Menyemak...':'MASUK'}</button>{loginError&&<div className="error" role="alert">{loginError}</div>}</div>{busy&&<LoadingOverlay label={busyLabel}/>}</div>;
 
   return <div className="app">
     <header><div className="brand"><img src={LOGO}/><div><b>SISTEM PAJSK SKSA</b><small>Master murid/unit: Supabase Portal Koku</small></div></div><div className="topActions"><select value={year} onChange={e=>changeYear(Number(e.target.value))}>{sessions.map(s=><option key={s.year} value={s.year}>SESI {s.year}</option>)}</select><button onClick={()=>mode==='ppki'?loadPpki():loadClasses()}><RefreshCw size={16}/> Muat Semula</button><button onClick={logout}><LogOut size={16}/> Keluar</button></div></header>
@@ -97,22 +125,69 @@ export default function App(){
       <div className="modeTabs"><button className={mode==='mainstream'?'active':''} onClick={()=>switchMode('mainstream')}>TAHAP 2 · TAHUN 4-6</button><button className={mode==='ppki'?'active':''} onClick={()=>switchMode('ppki')}>PPKI</button></div>
       {mode==='mainstream'?<>
         <section className="classes"><div><b>PILIH KELAS TAHAP 2</b><small>PAJSK arus perdana hanya Tahun 4, 5 dan 6. Tahun 1-3 tidak dipaparkan.</small></div><div className="classGrid">{classes.map(c=><button key={c.id} className={classCode===c.code?'active':''} onClick={()=>loadStudents(c.code)}><span>{c.code}</span><small>{c.complete}/{c.total} lengkap</small></button>)}</div></section>
-        {classCode&&<div className="workspace">
-          <aside><h3>{classCode}</h3><div className="studentList">{students.map(s=><button key={s.id} className={selectedId===s.id?'active':''} onClick={()=>chooseStudent(s)}><span>{s.name}</span>{s.complete?<CheckCircle2 size={16}/>:<Circle size={16}/>}</button>)}</div></aside>
-          <section className="editor">{!selected||!record?<div className="empty">Pilih murid untuk mula pengisian.</div>:<>
-            <div className="studentHead"><div><h2>{selected.name}</h2><p>{selected.myid||'-'} · {selected.className} · Tahun {selected.yearLevel}</p></div><label className="complete"><input type="checkbox" checked={complete} onChange={e=>setComplete(e.target.checked)}/> Pengisian lengkap</label></div>
+        {classCode&&<section className="classWorkspace" aria-label={`Murid kelas ${classCode}`}>
+          <div className="classHeading"><div><h2>Kelas {classCode}</h2><p>Klik nama murid untuk buka borang pengisian PAJSK.</p></div><span className="classSummary"><UsersRound size={18}/>{students.filter(s=>s.complete).length}/{students.length} lengkap</span></div>
+          <div className="studentGrid">{students.map((s,index)=>{
+            const saved=initRecord(s);
+            return <button type="button" key={s.id} className={`studentCard ${s.complete?'isComplete':''}`} onClick={()=>chooseStudent(s)} aria-label={`Buka borang ${s.name}`}>
+              <span className="studentCardTop"><span className="studentNumber">{String(index+1).padStart(2,'0')}</span><span className={`studentState ${s.complete?'done':''}`}>{s.complete?<CheckCircle2 size={14}/>:<Circle size={14}/>} {s.complete?'Ditanda lengkap':'Belum lengkap'}</span></span>
+              <strong className="studentName">{s.name}</strong>
+              <span className="studentMeta">{s.className} · Tahun {s.yearLevel}</span>
+              <span className="studentStatuses">{tabs.map(([key,label])=>{
+                const count=Object.keys(key==='ekstraKurikulum'?extraWarnings(saved[key]):coreWarnings(saved[key])).length;
+                return <span key={key} className={`categoryStatus ${count?'needsReview':'ready'}`}><span>{label}</span><b aria-label={count?`${count} medan belum lengkap`:'Tiada amaran'}>{count?`! ${count}`:'✓'}</b></span>
+              })}</span>
+              <span className="openStudent">Buka pengisian <span aria-hidden="true">↗</span></span>
+            </button>
+          })}</div>
+          {!students.length&&<div className="empty">Tiada murid dalam kelas ini.</div>}
+        </section>}
+        {selected&&record&&<StudentModal onClose={closeStudent}>
+          <div className="modalHeader"><div className="studentHead"><div><h2 id="student-modal-title">{selected.name}</h2><p>{selected.myid||'-'} · {selected.className} · Tahun {selected.yearLevel}</p></div><label className="complete"><input type="checkbox" checked={complete} onChange={e=>setComplete(e.target.checked)}/> Pengisian lengkap</label></div><button type="button" className="modalClose" aria-label="Tutup borang murid" onClick={closeStudent}><X size={22}/></button></div>
+          <div className="modalScroll">
             <div className="prefillInfo">Aktiviti dan jawatan yang boleh dipadankan telah diambil terus daripada Portal Koku. Nilai disimpan menggunakan label SPPB/iDME supaya extension tidak perlu meneka semasa pemindahan.</div>
             <div className="tabs">{tabs.map(([k,l])=>{const count=Object.keys(warningsByTab[k]).length;return <button className={`${tab===k?'active':''} ${count?'hasWarnings':''}`} key={k} onClick={()=>setTab(k)}>{l}{count>0&&<span className="warningBadge" aria-label={`${count} amaran`}>! {count}</span>}</button>})}</div>
             <div className="validationInfo">Medan bertanda merah perlu disemak. SIMPAN tetap boleh digunakan untuk sambung kemudian. Perkhidmatan/Jawatan dan Anugerah Khas Ekstra Kurikulum ialah pilihan sahaja; boleh dikosongkan jika tidak berkenaan.</div>
             {complete&&warningCount>0&&<div className="completionWarning" role="status">“Pengisian lengkap” ditanda, tetapi masih ada {warningCount} amaran medan. Semak tab bertanda merah sebelum pemindahan ke iDME.</div>}
             {tab==='ekstraKurikulum'?<ExtraForm refs={refs} data={record.ekstraKurikulum} onChange={(v:any)=>setRecord({...record,ekstraKurikulum:v})}/>:<CoreForm category={(activeTab?.[2]||'club') as 'club'|'uniform'|'sport'} refs={refs} data={record[tab]} onChange={(v:any)=>setRecord({...record,[tab]:v})}/>} 
-            <div className="savebar"><span>{status}</span><button onClick={save} disabled={busy}><Save size={16}/> {busy?'MENYIMPAN...':'SIMPAN'}</button></div>
-          </>}</section>
-        </div>}
+          </div>
+            <div className="savebar modalSave"><span role="status">{status||'Klik SIMPAN untuk menyimpan perubahan sebelum tutup.'}</span><button onClick={save} disabled={busy}><Save size={16}/> {busy?'MENYIMPAN...':'SIMPAN'}</button></div>
+          {saveSuccess>0&&<SaveCelebration key={saveSuccess} onDismiss={dismissSuccess}/>}
+        </StudentModal>}
         {!classCode&&<div className="welcome">Pilih kelas Tahun 4, 5 atau 6 di atas.</div>}
       </>:<PpkiPanel students={ppki} setStudents={setPpki} onSave={savePpki} busy={busy} status={status}/>} 
+      {status&&!selected&&mode==='mainstream'&&<div className="pageStatus" role="status">{status}</div>}
     </main>
+    {saveSuccess>0&&mode==='ppki'&&<SaveCelebration key={saveSuccess} onDismiss={dismissSuccess}/>}
+    {busy&&<LoadingOverlay label={busyLabel}/>}
   </div>
+}
+
+function StudentModal({children,onClose}:{children:ReactNode;onClose:()=>void}){
+  const dialog=useRef<HTMLDialogElement>(null);
+  useEffect(()=>{
+    const el=dialog.current!;const previous=document.activeElement as HTMLElement|null;
+    const overflow=document.body.style.overflow;document.body.style.overflow='hidden';el.showModal();
+    return()=>{el.close();document.body.style.overflow=overflow;previous?.focus({preventScroll:true})};
+  },[]);
+  return <dialog ref={dialog} className="studentModal" aria-labelledby="student-modal-title" onCancel={e=>{e.preventDefault();onClose()}}>{children}</dialog>;
+}
+function LoadingOverlay({label}:{label:string}){
+  const dialog=useRef<HTMLDialogElement>(null);
+  useEffect(()=>{const el=dialog.current!;el.showModal();return()=>el.close()},[]);
+  return <dialog ref={dialog} className="loadingOverlay" aria-label={label} onCancel={e=>e.preventDefault()}>
+    <div role="status" aria-live="polite" className="loadingContent">
+      <div className="kokuLoader"><span className="electricOrbit orbitClockwise"/><span className="electricOrbit orbitCounter"/><img src={KOKU_LOGO} alt="Unit Kokurikulum"/></div>
+      <strong>{label}</strong><small>Sebentar ya, sistem sedang bekerja.</small>
+    </div>
+  </dialog>;
+}
+function SaveCelebration({onDismiss}:{onDismiss:()=>void}){
+  useEffect(()=>{const timer=window.setTimeout(onDismiss,6500);return()=>window.clearTimeout(timer)},[onDismiss]);
+  return <div className="saveCelebration">
+    <div className="heartShower" aria-hidden="true">{Array.from({length:26},(_,i)=><span key={i} style={{'--left':`${(i*37)%100}%`,'--delay':`${(i%8)*.16}s`,'--drift':`${(i%2?1:-1)*(20+i*3)}px`,'--size':`${12+(i%5)*4}px`} as CSSProperties}>♥</span>)}</div>
+    <div className="successToast" role="status" aria-live="polite"><CheckCircle2 size={25}/><p>{SAVED_MESSAGE}</p><button type="button" aria-label="Tutup mesej berjaya" onClick={onDismiss}><X size={18}/></button></div>
+  </div>;
 }
 
 function CoreForm({data,onChange,category,refs}:{data:any,onChange:(v:any)=>void;category:'club'|'uniform'|'sport';refs:RefOption[]}){
