@@ -147,7 +147,7 @@ export default function App(){
           <div className="modalScroll">
             <div className="prefillInfo">Aktiviti dan jawatan yang boleh dipadankan telah diambil terus daripada Portal Koku. Nilai disimpan menggunakan label SPPB/iDME supaya extension tidak perlu meneka semasa pemindahan.</div>
             <div className="tabs">{tabs.map(([k,l])=>{const count=Object.keys(warningsByTab[k]).length;return <button className={`${tab===k?'active':''} ${count?'hasWarnings':''}`} key={k} onClick={()=>setTab(k)}>{l}{count>0&&<span className="warningBadge" aria-label={`${count} amaran`}>! {count}</span>}</button>})}</div>
-            <div className="validationInfo">Medan bertanda merah perlu disemak. SIMPAN tetap boleh digunakan untuk sambung kemudian. Perkhidmatan/Jawatan dan Anugerah Khas Ekstra Kurikulum ialah pilihan sahaja; boleh dikosongkan jika tidak berkenaan.</div>
+            <div className="validationInfo">Medan bertanda merah perlu disemak. SIMPAN tetap boleh digunakan untuk sambung kemudian. Tahap Pencapaian Tertinggi, Program NILAM, Perkhidmatan/Jawatan dan Anugerah Khas ialah pilihan sahaja; boleh dikosongkan jika tidak berkenaan.</div>
             {complete&&warningCount>0&&<div className="completionWarning" role="status">“Pengisian lengkap” ditanda, tetapi masih ada {warningCount} amaran medan. Semak tab bertanda merah sebelum pemindahan ke iDME.</div>}
             {tab==='ekstraKurikulum'?<ExtraForm refs={refs} data={record.ekstraKurikulum} onChange={(v:any)=>setRecord({...record,ekstraKurikulum:v})}/>:<CoreForm category={(activeTab?.[2]||'club') as 'club'|'uniform'|'sport'} refs={refs} data={record[tab]} onChange={(v:any)=>setRecord({...record,[tab]:v})}/>} 
           </div>
@@ -223,7 +223,7 @@ function CoreForm({data,onChange,category,refs}:{data:any,onChange:(v:any)=>void
       // Jangan compact/reindex kerana slot 2 atau 3 boleh wujud sendiri.
       patch({pelibatan:a.filter((x:any)=>String(x.peringkat||'').trim()).map((x:any)=>({slot:Number(x.slot),peringkat:x.peringkat}))});
     }}>{levels.map(x=><option key={x}>{x}</option>)}</select></Field><Field label="Slot"><input value={i+1} disabled/></Field></div>)}</Card>
-    <Card title="Tahap Pencapaian Tertinggi"><div className="grid2"><Field label="Peringkat" error={errors.pencapaianPeringkat}><select value={d.pencapaian?.peringkat||''} onChange={e=>patch({pencapaian:{...(d.pencapaian||{}),peringkat:e.target.value}})}>{levels.map(x=><option key={x}>{x}</option>)}</select></Field><Field label="Kedudukan" error={errors.pencapaianKedudukan}><select value={d.pencapaian?.kedudukan||''} onChange={e=>patch({pencapaian:{...(d.pencapaian||{}),kedudukan:e.target.value}})}>{places.map(x=><option key={x}>{x}</option>)}</select></Field></div></Card>
+    <Card title="Tahap Pencapaian Tertinggi (pilihan)"><p className="optionalNote">Tidak wajib — boleh biarkan Peringkat dan Kedudukan kosong jika tidak berkenaan.</p><div className="grid2"><Field label="Peringkat"><select value={d.pencapaian?.peringkat||''} onChange={e=>patch({pencapaian:{...(d.pencapaian||{}),peringkat:e.target.value}})}>{levels.map(x=><option key={x}>{x}</option>)}</select></Field><Field label="Kedudukan"><select value={d.pencapaian?.kedudukan||''} onChange={e=>patch({pencapaian:{...(d.pencapaian||{}),kedudukan:e.target.value}})}>{places.map(x=><option key={x}>{x}</option>)}</select></Field></div></Card>
     <Card title="Komitmen (maksimum 4)" error={errors.komitmen}>
       <div className="choiceList">{commitmentOptions.map(o=>{const checked=selectedCommitments.includes(o.label);const disabled=!checked&&selectedCommitments.length>=4;return <label className={`choiceRow ${disabled?'disabled':''}`} key={o.code}><input type="checkbox" checked={checked} disabled={disabled} onChange={()=>toggleCommitment(o.label)}/><span>{o.label}</span><b>{o.score??''}</b></label>})}</div>
       <div className="choiceSummary">Dipilih: {selectedCommitments.length}/4</div>
@@ -292,7 +292,7 @@ function ExtraForm({data,onChange,refs}:{data:any,onChange:(v:any)=>void;refs:Re
       <div className="communityTable">{communityRows.map(({option:o,count})=>{const other=totalCommunity-count;const max=Math.max(0,5-other);return <div className="communityRow" key={o.code}><span>{o.label}</span><label>Bilangan <select value={count} onChange={e=>setCommunity(o.label,Number(e.target.value))}>{Array.from({length:max+1},(_,i)=>i).map(n=><option key={n} value={n}>{n}</option>)}</select></label></div>})}</div>
       <div className="choiceSummary">Jumlah aktiviti: {totalCommunity}/5</div>
     </Card>
-    <Field label="Program NILAM" error={errors.nilamStars}><select value={d.nilamStars||''} onChange={e=>patch({nilamStars:e.target.value?Number(e.target.value):null})}><option value="">-- PILIH BINTANG --</option>{[1,2,3,4,5].map(n=><option key={n} value={n}>{n} BINTANG</option>)}</select></Field>
+    <Field label="Program NILAM (pilihan)" error={errors.nilamStars}><select value={d.nilamStars||''} onChange={e=>patch({nilamStars:e.target.value?Number(e.target.value):null})}><option value="">-- TIADA / TIDAK BERKENAAN --</option>{[1,2,3,4,5].map(n=><option key={n} value={n}>{n} BINTANG</option>)}</select></Field>
     <ValidationSummary errors={errors} assessed={d.ditaksir!==false}/>
   </div>
 }

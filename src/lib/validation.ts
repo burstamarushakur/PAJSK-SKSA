@@ -13,8 +13,8 @@ export function coreWarnings(data: any): FormWarnings {
   // Slots are independent; slot 2 or 3 alone is a valid selection.
   if (!Array.isArray(d.pelibatan) || !d.pelibatan.some((p: any) => filled(p?.peringkat)))
     errors.pelibatan = 'Pelibatan belum diisi — pilih peringkat pada sekurang-kurangnya satu slot.';
-  if (!filled(d.pencapaian?.peringkat)) errors.pencapaianPeringkat = 'Pencapaian: peringkat belum dipilih.';
-  if (!filled(d.pencapaian?.kedudukan)) errors.pencapaianKedudukan = 'Pencapaian: kedudukan belum dipilih.';
+  // Tahap Pencapaian Tertinggi is optional in all three core categories.
+  // Preserve any saved values without requiring a rank or achievement.
   const commitments = Array.isArray(d.komitmen) ? d.komitmen.filter(filled) : [];
   if (!commitments.length) errors.komitmen = 'Komitmen belum dipilih.';
   else if (commitments.length > 4) errors.komitmen = 'Komitmen melebihi maksimum 4 pilihan.';
@@ -34,6 +34,7 @@ export function extraWarnings(data: any): FormWarnings {
     errors.khidmatMasyarakat = 'Khidmat Masyarakat belum diisi.';
   else if (rows.some((r: any) => !filled(r?.activity) || !integerInRange(r?.count, 0, 5)) || rows.reduce((n: number, r: any) => n + Number(r?.count || 0), 0) > 5)
     errors.khidmatMasyarakat = 'Semak bilangan Khidmat Masyarakat — maksimum 5 aktiviti.';
-  if (!integerInRange(d.nilamStars, 1, 5)) errors.nilamStars = 'Program NILAM belum dipilih atau bukan 1–5 bintang.';
+  // NILAM may be left blank; validate the range only when a value is supplied.
+  if (filled(d.nilamStars) && !integerInRange(d.nilamStars, 1, 5)) errors.nilamStars = 'Program NILAM mestilah 1–5 bintang jika diisi.';
   return errors;
 }

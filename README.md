@@ -1,5 +1,20 @@
 # PAJSK SKSA — Supabase Edition
 
+## Kemas kini v1.3.1 — pencapaian tertinggi dan NILAM pilihan sahaja
+
+- Tahap Pencapaian Tertinggi (Peringkat dan Kedudukan) untuk Kelab & Persatuan, Badan Beruniform dan Sukan & Permainan tidak wajib diisi.
+- Program NILAM dalam Ekstra Kurikulum juga tidak wajib dipilih. Nilai kosong tidak menghasilkan amaran; jika diisi, nilainya masih disemak antara 1–5 bintang.
+- Kiraan amaran pada kad murid, tab, ringkasan borang dan peringatan “Pengisian lengkap” menggunakan peraturan baharu ini secara seragam.
+- Pilihan/data sedia ada dikekalkan. Medan lain masih menggunakan semakan asal.
+- Perubahan webapp sahaja. Tiada perubahan pada API, Supabase atau extension Chrome. Tidak perlu migration SQL atau deploy semula Edge Function.
+- Grid murid, popup, logo loading dan animasi simpan v1.3.0 dikekalkan.
+
+Upload kandungan folder projek ini ke root repo frontend sedia ada, termasuk `public/`, kemudian deploy semula frontend. Versi ini menggantikan ZIP v1.3.0.
+
+Pengesahan: `npm run lint`, `npm test` (10 ujian) dan `npm run build` lulus. Ujian Chromium dengan API tiruan juga lulus: ketiga-tiga tab pencapaian pilihan, NILAM boleh dikosongkan dan disimpan sebagai null, serta kiraan kad/tab dikemas kini. Tiada data produksi digunakan.
+
+---
+
 ## Kemas kini v1.3.0 — grid murid, popup dan animasi Unit Koku
 
 - Klik kelas untuk melihat semua murid dalam grid kad. Setiap kad memaparkan empat kategori dan bilangan medan yang perlu disemak, menggunakan validasi asal.
