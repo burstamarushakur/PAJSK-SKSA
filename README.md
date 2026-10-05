@@ -1,5 +1,35 @@
 # PAJSK SKSA — Supabase Edition
 
+## Kemas kini v1.2.2 — amaran medan belum lengkap
+
+- Medan kosong ditanda merah serta disenaraikan di bawah setiap tab. Jumlah amaran dipaparkan pada butang tab.
+- SIMPAN tetap dibenarkan walaupun ada amaran. Amaran dikira semula serta-merta apabila guru mengubah pilihan.
+- Kelab/Persatuan, Badan Beruniform dan Sukan/Permainan: semak Aktiviti, Jawatan, sekurang-kurangnya satu slot Pelibatan, kedua-dua medan Pencapaian, sekurang-kurangnya satu Komitmen (maksimum empat), Khidmat Sumbangan dan Kehadiran (0–12).
+- Ekstra Kurikulum: Perkhidmatan/Jawatan boleh kosong tanpa amaran. Anugerah Khas, Khidmat Masyarakat dan NILAM yang kosong masih diberi amaran seperti permintaan pengisian.
+- Ini semakan kelengkapan webapp; bukan pengesahan penerimaan oleh iDME. Amaran tidak mengisi jawapan atau mencipta pencapaian murid secara automatik.
+- Bahagian dengan Ditaksir tidak ditanda dikecualikan. Nilai kehadiran 0 sah; nilai kosong tidak lagi dipaparkan sebagai 12.
+- Pilihan “Pengisian lengkap” kekal manual. Jika ditanda ketika masih ada amaran, peringatan tambahan dipaparkan.
+- Tiada perubahan kepada API, struktur rekod, pemetaan extension, migrasi atau data Supabase. Semua fail dalam `supabase/` dan `src/lib/api.ts` kekal sama seperti ZIP asal.
+
+### Kemas kini webapp sedia ada
+
+Muat naik kandungan folder projek ini ke repositori frontend sedia ada, kemudian deploy melalui proses sedia ada. Kekalkan tetapan environment/deployment yang sedang digunakan. Kemas kini ini **tidak memerlukan** sebarang SQL/migration atau deploy semula Edge Function.
+
+Fail pelaksanaan yang berubah: `src/App.tsx`, `src/index.css`; fail baharu: `src/lib/validation.ts`. `package.json` dan `package-lock.json` menyertakan jenis TypeScript React serta arahan ujian. ZIP ini belum dideploy ke laman langsung.
+
+Pengesahan:
+
+```bash
+npm ci
+npm run lint
+npm test
+npm run build
+```
+
+Sembilan ujian validasi lulus. Ujian interaksi pelayar dengan API tiruan juga lulus: amaran keempat-empat tab, amaran hilang secara langsung, pengecualian Perkhidmatan Ekstra, Ditaksir, SIMPAN ketika tidak lengkap, pengekalan payload asal, slot Pelibatan 2, kehadiran 0 dan lebar paparan telefon. Tiada data produksi digunakan dalam ujian.
+
+---
+
 PAJSK menggunakan **project Supabase yang sama** dengan Portal Koku dan BMI/SEGAK: `Perjumpaan Kokurikulum SKSA` (`sxmchnwzcbsanecxnqdt`).
 
 ## Skop murid
